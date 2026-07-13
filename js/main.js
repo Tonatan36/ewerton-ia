@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 
-let chatHistory = []; // Memória da conversa (Contexto)
+let chatHistory = []; 
 
 const chatBox = document.getElementById('chat-box');
 const input = document.getElementById('msg-input');
@@ -8,7 +8,6 @@ const sendBtn = document.getElementById('send-btn');
 const resetBtn = document.getElementById('reset-key');
 
 window.onload = () => {
-    // Verifica se a chave existe
     if (!CONFIG.getApiKey()) {
         const key = prompt("Insira sua Groq API Key:");
         if (key) {
@@ -17,10 +16,11 @@ window.onload = () => {
         }
     }
     
-    // Carrega histórico visual se existir
     const saved = localStorage.getItem('zapia_v3_history');
-    if (saved) chatBox.innerHTML = saved;
-    scrollToBottom();
+    if (saved) {
+        chatBox.innerHTML = saved;
+        setTimeout(scrollToBottom, 100); // Garante scroll ao abrir
+    }
 };
 
 async function sendMessage() {
@@ -30,7 +30,6 @@ async function sendMessage() {
     appendMessage('user', text);
     input.value = '';
     
-    // Adiciona ao contexto (máximo 10 mensagens)
     chatHistory.push({ role: 'user', content: text });
     if (chatHistory.length > 10) chatHistory.shift();
 
@@ -64,13 +63,15 @@ async function sendMessage() {
             
             for (const line of lines) {
                 if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-                    const json = JSON.parse(line.substring(6));
-                    const content = json.choices[0].delta.content;
-                    if (content) {
-                        fullResponse += content;
-                        aiText.innerText = fullResponse;
-                        scrollToBottom();
-                    }
+                    try {
+                        const json = JSON.parse(line.substring(6));
+                        const content = json.choices[0].delta.content;
+                        if (content) {
+                            fullResponse += content;
+                            aiText.innerText = fullResponse;
+                            scrollToBottom(); // Scroll a cada nova palavra
+                        }
+                    } catch (e) {}
                 }
             }
         }
@@ -92,8 +93,23 @@ function appendMessage(role, text) {
     return div;
 }
 
-function scrollToBottom() { chatBox.scrollTop = chatBox.scrollHeight; }
+function scrollToBottom() {
+    chatBox.scrollTo({
+        top: chatBox.scrollHeight,
+        behavior: 'smooth'
+    });
+}
 
-sendBtn.onclick = sendMessage;
-input.onkeypress = (e) => e.key === 'Enter' && sendMessage();
-resetBtn.onclick = () => { localStorage.removeItem('ZAPIA_KEY'); location.reload(); };
+sendBtn.addEventListener('click', sendMessage);
+input.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
+        input.blur(); // Esconde o teclado no mobile após enviar
+    }
+});
+resetBtn.onclick = () => { 
+    if(confirm("Resetar API Key?")) {
+        localStorage.removeItem('ZAPIA_KEY'); 
+        location.reload(); 
+    }
+};
