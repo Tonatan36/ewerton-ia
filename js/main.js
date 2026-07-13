@@ -9,7 +9,7 @@ const resetBtn = document.getElementById('reset-key');
 
 window.onload = () => {
     if (!CONFIG.getApiKey()) {
-        const key = prompt("Insira sua Groq API Key:");
+        const key = prompt("Zapia v3: Insira sua Groq API Key:");
         if (key) {
             CONFIG.setApiKey(key);
             location.reload();
@@ -19,8 +19,9 @@ window.onload = () => {
     const saved = localStorage.getItem('zapia_v3_history');
     if (saved) {
         chatBox.innerHTML = saved;
-        setTimeout(scrollToBottom, 100); // Garante scroll ao abrir
+        setTimeout(scrollToBottom, 300);
     }
+    input.focus();
 };
 
 async function sendMessage() {
@@ -69,7 +70,7 @@ async function sendMessage() {
                         if (content) {
                             fullResponse += content;
                             aiText.innerText = fullResponse;
-                            scrollToBottom(); // Scroll a cada nova palavra
+                            scrollToBottom();
                         }
                     } catch (e) {}
                 }
@@ -94,21 +95,27 @@ function appendMessage(role, text) {
 }
 
 function scrollToBottom() {
-    chatBox.scrollTo({
-        top: chatBox.scrollHeight,
-        behavior: 'smooth'
-    });
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-sendBtn.addEventListener('click', sendMessage);
+sendBtn.addEventListener('click', () => {
+    sendMessage();
+    input.focus();
+});
+
 input.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         sendMessage();
-        input.blur(); // Esconde o teclado no mobile após enviar
+        if (window.innerWidth > 768) {
+            input.focus();
+        } else {
+            input.blur();
+        }
     }
 });
+
 resetBtn.onclick = () => { 
-    if(confirm("Resetar API Key?")) {
+    if(confirm("Deseja resetar sua API Key?")) {
         localStorage.removeItem('ZAPIA_KEY'); 
         location.reload(); 
     }
